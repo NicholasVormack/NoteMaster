@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#000000" />
     <meta
       name="description"
-      content="Web site created using create-react-app"
+      content="NoteMaster: a note-taking workspace with tags, pinning, full-text search and sorting."
     />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <!--
@@ -24,10 +24,31 @@
       work correctly both with client-side routing and a non-root public URL.
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
-    <title>React App</title>
+    <title>NoteMaster</title>
+    <style>
+      /* Demo notice. Sits above the app so nobody types a real password into a
+         public sandbox; the markup is plain HTML so it does not depend on React. */
+      #demo-notice {
+        background: #111;
+        color: #f2f2f2;
+        font: 12px/1.6 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+          sans-serif;
+        padding: 8px 14px;
+        text-align: center;
+        letter-spacing: 0.01em;
+      }
+      #demo-notice strong {
+        color: #7fd1ff;
+        font-weight: 600;
+      }
+    </style>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="demo-notice">
+      <strong>Live demo.</strong> Create any account and your notes are stored in Cloudflare D1. The
+      database is a sandbox and may be reset, so please do not reuse a real password.
+    </div>
     <div id="root"></div>
     <!--
       This HTML file is a template.

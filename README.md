@@ -8,6 +8,12 @@ in a two-hour lecture it came from. Notes are searchable, taggable and pinnable.
 
 MERN stack: MongoDB, Express, React, Node.
 
+**[Live demo →](https://notemaster-6b0lj3.freebuff.site)** — create any account and
+start writing. The hosted build runs this React client against a Cloudflare
+Workers + D1 port of the same API (see [Hosted demo](#hosted-demo)), so it needs
+no MongoDB. It is a public sandbox: the database may be reset without warning, so
+please do not reuse a real password.
+
 > **Origin.** This started as a follow-along build of the YOUNOTE tutorial, which
 > is the honest description of the original codebase. Everything in
 > [What I added](#what-i-added) and [Security fixes](#security-fixes) was written
@@ -88,6 +94,12 @@ server/                     Express + Mongoose
   routes/auth.js            register + login
   middleware/auth.js        JWT verification, public-route allowlist
   server.js                 config, routes, health, error handling, shutdown
+worker/                     Cloudflare Workers port of the API (the live demo)
+  index.js                  routing, PBKDF2 + JWT auth, D1 queries, static assets
+  wrangler.toml             local run: wrangler dev with a local D1 database
+deploy/
+  deploy.json               entrypoint and assets for the hosted deploy
+  stage.sh                  build the client, then stage worker/ + public/
 ```
 
 ### API
@@ -107,6 +119,44 @@ All routes except register/login require an `x-auth-token` header.
 | `GET` | `/health` | Liveness + database state (no auth) |
 
 `sort` accepts `recent` (default), `created`, `oldest` or `title`.
+
+## Hosted demo
+
+The live demo is the same client, published as static assets behind a Worker that
+implements the HTTP contract above on Cloudflare D1. There is no Node process and
+no MongoDB in that path.
+
+What differs, and why:
+
+| | `server/` (MongoDB) | `worker/` (D1) |
+| --- | --- | --- |
+| Storage | Mongo collections | `users` and `notes` tables, one row per note |
+| Tags | array field | JSON column, matched with `json_each` |
+| Search | `$regex` over three fields | `LIKE ... ESCAPE` over the same three fields |
+| Passwords | bcrypt | PBKDF2-SHA256, 100k iterations, per-user salt |
+| Signing key | `JWT_SECRET` from env | 32 random bytes generated once into the `settings` table |
+| Accounts | unlimited | capped at 500, so a public demo cannot be farmed |
+
+Both implementations scope every note query by the author taken from the verified
+token, return the same `{ msg }` error bodies, and validate ownership on read,
+update, pin and delete.
+
+Run it locally (this uses a local D1 database, no Cloudflare account needed):
+
+```bash
+cd client && NODE_OPTIONS=--openssl-legacy-provider npm run build
+cd ../worker && npx wrangler dev      # http://localhost:8787
+```
+
+Deploy:
+
+```bash
+deploy/stage.sh /tmp/notemaster-stage  # builds and stages worker/, public/, deploy.json
+```
+
+Then upload the staged directory with a Workers-compatible deployer that can bind
+a D1 database named `DB` to the Worker. The schema is created by the Worker itself
+on first request, so there is no migration step.
 
 ## Setup
 
@@ -158,8 +208,13 @@ NODE_OPTIONS=--openssl-legacy-provider npm run build
 - **No pagination.** The list caps at 500 notes.
 - **Tokens live in `localStorage`.** Simple, and vulnerable to XSS; httpOnly
   cookies are the correct fix.
-- **The client cannot render without a running API and a reachable database**,
-  which is why this repository has no hosted demo.
+- **Two API implementations.** `server/` is the reference; `worker/` exists so the
+  project can be shown running without provisioning a database. They are kept in
+  step by hand, and a shared contract test suite is the obvious missing piece.
+- **Workers deploy is verified by request-level checks, not a test suite.** The
+  deployed API was exercised end to end — auth, CRUD, search, tag filter, sorting,
+  pinning, and cross-account isolation — but those checks are a script, not a
+  committed suite.
 
 ## License
 

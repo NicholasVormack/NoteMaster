@@ -47,7 +47,7 @@ const CustomAppBar = () => {
             <MoreVert />
           </IconButton> : null}
           <Typography variant="h6">
-            YouNote
+            NoteMaster
           </Typography>
         </Toolbar>
     </AppBar>

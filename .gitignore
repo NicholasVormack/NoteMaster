@@ -8,7 +8,12 @@ node_modules/
 
 # build output
 client/build/
+public/
 dist/
+
+# local Cloudflare state (D1 database, build cache)
+.wrangler/
+.dev.vars
 
 # logs / OS
 *.log

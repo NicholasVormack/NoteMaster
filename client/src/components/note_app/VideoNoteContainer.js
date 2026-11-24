@@ -19,7 +19,18 @@ const VideoNoteContainer = (props) => {
       url += id;
     }
 
-    const time = await videoRef.current.internalPlayer.getCurrentTime();
+    // A note does not have to be attached to a video: the player is often not
+    // ready yet, and was never loaded at all for a plain note. Awaiting
+    // getCurrentTime() unconditionally threw before, so Save silently did
+    // nothing. A missing position falls back to 0.
+    let time = 0;
+    try {
+      const player = videoRef.current && videoRef.current.internalPlayer;
+      if(player) time = (await player.getCurrentTime()) || 0;
+    } catch(error) {
+      time = 0;
+    }
+
     let reqBody = JSON.stringify({
       title: title,
       body: body,
@@ -29,17 +40,31 @@ const VideoNoteContainer = (props) => {
       videoTimestamp: time
     });
 
-    const response = await fetch(url, {
-      method: type,
-      headers: {
-        'content-type': 'application/json',
-        'x-auth-token': localStorage.getItem('token')
-      },
-      body: reqBody
-    });
+    try {
+      const response = await fetch(url, {
+        method: type,
+        headers: {
+          'content-type': 'application/json',
+          'x-auth-token': localStorage.getItem('token')
+        },
+        body: reqBody
+      });
 
-    const json = await response.json();
-    setNote(json);
+      const json = await response.json();
+
+      if(!response.ok) {
+        window.alert(json.msg || 'Could not save that note.');
+        return;
+      }
+
+      setNote(json);
+
+      // Land on the list so the saved note, its tags and its pin control are
+      // visible immediately instead of leaving the user on a stale editor.
+      props.history.push('/home');
+    } catch(error) {
+      window.alert('Could not reach the server. Your note was not saved.');
+    }
   }
 
   return (

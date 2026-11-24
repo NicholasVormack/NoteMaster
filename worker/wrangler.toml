@@ -1,0 +1,21 @@
+# Local/native Cloudflare Worker deployment of the NoteMaster API.
+#
+#   cd client && NODE_OPTIONS=--openssl-legacy-provider npm run build
+#   npx wrangler dev            # http://localhost:8787 with a local D1 database
+#
+# For the hosted demo, `npm run deploy:pages` in deploy/ builds the client and
+# ships worker/ + public/ through the Sites deployer instead.
+
+name = "notemaster-api"
+main = "index.js"
+compatibility_date = "2026-05-01"
+
+[assets]
+directory = "../client/build"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "notemaster"
+database_id = "00000000-0000-0000-0000-000000000000"
