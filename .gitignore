@@ -1,0 +1,16 @@
+# dependencies
+node_modules/
+
+# environment (never commit real credentials)
+.env
+.env.local
+.env.*.local
+
+# build output
+client/build/
+dist/
+
+# logs / OS
+*.log
+npm-debug.log*
+.DS_Store
